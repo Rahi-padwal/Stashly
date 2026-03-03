@@ -56,7 +56,7 @@ npm run start:frontend
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/linkRecall.git
+git clone https://github.com/Rahi-padwal/linkRecall.git
 cd linkRecall
 ```
 

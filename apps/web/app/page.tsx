@@ -43,6 +43,7 @@ export default function Home() {
   const handleLogout = () => {
     localStorage.removeItem("userId");
     localStorage.removeItem("userEmail");
+    localStorage.removeItem("accessToken");
     router.push("/auth");
   };
 
@@ -62,12 +63,19 @@ export default function Home() {
     setSaveStatus(null);
 
     try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        setSaveStatus("Please log in first.");
+        return;
+      }
+
       const response = await fetch(`${API_BASE_URL}/links`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
-        body: JSON.stringify({ originalUrl: input, userId }),
+        body: JSON.stringify({ originalUrl: input }),
       });
 
       if (!response.ok) {
@@ -103,10 +111,20 @@ export default function Home() {
     setShowingAllLinks(false);
 
     try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        setSearchStatus("Please log in first.");
+        return;
+      }
+
       const response = await fetch(
-        `${API_BASE_URL}/links/search?q=${encodeURIComponent(
-          input,
-        )}&userId=${encodeURIComponent(userId)}`,
+        `${API_BASE_URL}/links/search?q=${encodeURIComponent(input)}`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        }
       );
 
       if (!response.ok) {
@@ -139,8 +157,20 @@ export default function Home() {
     setShowingAllLinks(true);
 
     try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        setSearchStatus("Please log in first.");
+        return;
+      }
+
       const response = await fetch(
-        `${API_BASE_URL}/links?userId=${encodeURIComponent(userId)}`,
+        `${API_BASE_URL}/links`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        }
       );
 
       if (!response.ok) {

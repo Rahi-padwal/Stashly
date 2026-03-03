@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
@@ -19,7 +19,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new UnauthorizedException('User with this email already exists');
+      throw new ConflictException('User with this email already exists');
     }
 
     // Hash password
@@ -29,7 +29,7 @@ export class AuthService {
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
-        password: hashedPassword,
+        passwordHash: hashedPassword,
       },
       select: {
         id: true,
@@ -40,14 +40,11 @@ export class AuthService {
 
     // Generate JWT token
     const accessToken = this.jwtService.sign(
-      { sub: user.id, email: user.email },
-      { expiresIn: '15m' },
-    );
+  { sub: user.id, email: user.email },
+);
 
     return {
       accessToken,
-      userId: user.id,
-      email: user.email,
       message: 'User created successfully',
     };
   }
@@ -63,7 +60,8 @@ export class AuthService {
     }
 
     // Verify password
-    const isPasswordValid = await bcrypt.compare(dto.password, user.password);
+    const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
+
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
@@ -71,14 +69,11 @@ export class AuthService {
 
     // Generate JWT token
     const accessToken = this.jwtService.sign(
-      { sub: user.id, email: user.email },
-      { expiresIn: '15m' },
-    );
+  { sub: user.id, email: user.email },
+);
 
     return {
       accessToken,
-      userId: user.id,
-      email: user.email,
       message: 'Login successful',
     };
   }

@@ -1,5 +1,5 @@
 {
-  "name": "linkRecall",
+  "name": "Stashly",
   "version": "0.0.1",
   "description": "Build a memory of everything you read using local embeddings and semantic search",
   "author": "",
@@ -11,16 +11,16 @@
   ],
   "scripts": {
     "start:dev": "npm run start:backend & npm run start:frontend",
-    "build": "npm run build -w linkrecall-backend && npm run build -w linkrecall-web",
-    "format": "npm run format -w linkrecall-backend && npm run format -w linkrecall-web",
-    "lint": "npm run lint -w linkrecall-backend && npm run lint -w linkrecall-web",
-    "start:backend": "npm run start:dev -w linkrecall-backend",
-    "start:frontend": "npm run dev -w linkrecall-web",
-    "prisma:migrate:dev": "npm run prisma:migrate:dev -w linkrecall-backend",
-    "prisma:migrate:deploy": "npm run prisma:migrate:deploy -w linkrecall-backend",
-    "prisma:generate": "npm run prisma:generate -w linkrecall-backend",
-    "test": "npm run test -w linkrecall-backend",
-    "test:e2e": "npm run test:e2e -w linkrecall-backend"
+    "build": "npm run build -w stashly-backend && npm run build -w stashly-web",
+    "format": "npm run format -w stashly-backend && npm run format -w stashly-web",
+    "lint": "npm run lint -w stashly-backend && npm run lint -w stashly-web",
+    "start:backend": "npm run start:dev -w stashly-backend",
+    "start:frontend": "npm run dev -w stashly-web",
+    "prisma:migrate:dev": "npm run prisma:migrate:dev -w stashly-backend",
+    "prisma:migrate:deploy": "npm run prisma:migrate:deploy -w stashly-backend",
+    "prisma:generate": "npm run prisma:generate -w stashly-backend",
+    "test": "npm run test -w stashly-backend",
+    "test:e2e": "npm run test:e2e -w stashly-backend"
   },
   "devDependencies": {
     "prettier": "^3.0.0"

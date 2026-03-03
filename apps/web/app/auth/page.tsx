@@ -6,6 +6,22 @@ import { useRouter } from "next/navigation";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000";
 
+// Helper function to decode JWT payload
+function decodeJwt(token: string): { sub: string; email: string } | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    
+    const decoded = JSON.parse(
+      Buffer.from(parts[1], "base64").toString("utf-8")
+    );
+    
+    return { sub: decoded.sub, email: decoded.email };
+  } catch {
+    return null;
+  }
+}
+
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -20,7 +36,7 @@ export default function AuthPage() {
     setLoading(true);
 
     try {
-      const endpoint = isLogin ? "login" : "signup";
+      const endpoint = isLogin ? "login" : "register";
       const response = await fetch(`${API_BASE_URL}/auth/${endpoint}`, {
         method: "POST",
         headers: {
@@ -35,9 +51,16 @@ export default function AuthPage() {
         throw new Error(data.message || "Authentication failed");
       }
 
-      // Store user info in localStorage
-      localStorage.setItem("userId", data.userId);
-      localStorage.setItem("userEmail", data.email);
+      // Decode JWT to extract user info
+      const decoded = decodeJwt(data.accessToken);
+      if (!decoded) {
+        throw new Error("Invalid token received");
+      }
+
+      // Store token and user info in localStorage
+      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("userId", decoded.sub);
+      localStorage.setItem("userEmail", decoded.email);
 
       // Redirect to home page
       router.push("/");
@@ -52,7 +75,7 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
         <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">
-          LinkRecall
+          Stashly
         </h1>
         <p className="text-center text-gray-600 mb-8">
           {isLogin ? "Sign in to your account" : "Create a new account"}

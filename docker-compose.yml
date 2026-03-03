@@ -1,12 +1,12 @@
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: linkrecall_postgres
+    container_name: stashly_postgres
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: linkrecall
+      POSTGRES_DB: stashly
     ports:
       - "5432:5432"
     volumes:
@@ -15,7 +15,7 @@ services:
 
   ollama:
     image: ollama/ollama:latest
-    container_name: linkrecall_ollama
+    container_name: stashly_ollama
     restart: always
     ports:
       - "11434:11434"

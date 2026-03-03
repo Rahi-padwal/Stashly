@@ -1,7 +1,7 @@
 {
-  "name": "linkrecall-backend",
+  "name": "stashly-backend",
   "version": "0.0.1",
-  "description": "linkRecall NestJS backend",
+  "description": "Stashly NestJS backend",
   "author": "",
   "private": true,
   "license": "UNLICENSED",

@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
 import { PrismaService } from '../common/prisma/prisma.service';
@@ -6,7 +7,10 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   async signup(dto: SignupDto) {
     // Check if user already exists
@@ -34,7 +38,14 @@ export class AuthService {
       },
     });
 
+    // Generate JWT token
+    const accessToken = this.jwtService.sign(
+      { sub: user.id, email: user.email },
+      { expiresIn: '15m' },
+    );
+
     return {
+      accessToken,
       userId: user.id,
       email: user.email,
       message: 'User created successfully',
@@ -58,7 +69,14 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Generate JWT token
+    const accessToken = this.jwtService.sign(
+      { sub: user.id, email: user.email },
+      { expiresIn: '15m' },
+    );
+
     return {
+      accessToken,
       userId: user.id,
       email: user.email,
       message: 'Login successful',

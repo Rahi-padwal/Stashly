@@ -2,7 +2,6 @@ import {
   IsArray,
   IsOptional,
   IsString,
-  IsUUID,
   IsUrl,
   MaxLength,
 } from 'class-validator';
@@ -29,7 +28,5 @@ export class CreateLinkDto {
   @IsString()
   rawExtractedText?: string;
 
-  @IsOptional()
-  @IsUUID()
   userId?: string;
 }

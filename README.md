@@ -1,4 +1,4 @@
-# linkRecall
+# Stashly
 
 Build a memory of everything you read using local embeddings and semantic search.
 

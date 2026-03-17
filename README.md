@@ -1,4 +1,4 @@
-# linkRecall
+# Stashly
 
 Build a memory of everything you read using local embeddings and semantic search.
 
@@ -46,7 +46,7 @@ Dashboard UI with save link input (left) and semantic search interface (right), 
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     linkRecall Workflow                         │
+│                     Stashly Workflow                            │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  SAVE LINK FLOW:                                                │
@@ -102,8 +102,8 @@ Dashboard UI with save link input (left) and semantic search interface (right), 
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/linkRecall.git
-cd linkRecall
+git clone https://github.com/yourusername/Stashly.git
+cd Stashly
 ```
 
 ### Step 2: Start Infrastructure (PostgreSQL + Ollama)
@@ -239,7 +239,7 @@ GET /links/search?q=machine%20learning&userId=user-123
 ### Project Structure
 
 ```
-linkRecall/
+Stashly/
 ├── apps/
 │   ├── backend/               # NestJS backend
 │   │   ├── src/
@@ -273,7 +273,7 @@ linkRecall/
 
 **Backend** (`.env`):
 ```
-DATABASE_URL=postgresql://user:password@localhost:5432/linkrecall
+DATABASE_URL=postgresql://user:password@localhost:5432/stashly
 OLLAMA_EMBEDDINGS_URL=http://127.0.0.1:11434/api/embeddings
 PORT=3000
 NODE_ENV=development
@@ -311,7 +311,7 @@ npm run prisma:migrate:deploy
 Enable debug logging in the backend by setting:
 
 ```env
-DEBUG=linkRecall:*
+DEBUG=Stashly:*
 ```
 
 Frontend uses React DevTools; inspect network requests in browser DevTools.
@@ -321,11 +321,11 @@ Frontend uses React DevTools; inspect network requests in browser DevTools.
 ### Docker Production Build
 
 ```bash
-docker build -t linkrecall:latest .
+docker build -t stashly:latest .
 docker run -d -p 3000:3000 \
   -e DATABASE_URL="postgresql://..." \
   -e OLLAMA_EMBEDDINGS_URL="http://ollama:11434/api/embeddings" \
-  linkrecall:latest
+  stashly:latest
 ```
 
 ### Docker Compose Production
@@ -362,7 +362,7 @@ We welcome contributions! Please follow these steps:
 
 ### Reporting Issues
 
-Please use [GitHub Issues](https://github.com/yourusername/linkRecall/issues) to report bugs or suggest features. Include:
+Please use [GitHub Issues](https://github.com/yourusername/Stashly/issues) to report bugs or suggest features. Include:
 - A clear title and description
 - Steps to reproduce (if applicable)
 - Your environment (OS, Node version, Docker version)
@@ -374,8 +374,8 @@ This project is licensed under the MIT License. See [LICENSE](./LICENSE) file fo
 ## Support
 
 - **Documentation**: See this README and inline code comments
-- **Issues**: [GitHub Issues](https://github.com/yourusername/linkRecall/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/linkRecall/discussions)
+- **Issues**: [GitHub Issues](https://github.com/yourusername/Stashly/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/Stashly/discussions)
 
 ---
 

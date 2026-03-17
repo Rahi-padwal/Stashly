@@ -31,13 +31,12 @@ export class LinksService {
         throw new Error('User not found');
       }
 
-      const { metaDescription } = await this.extractMetadata(dto.originalUrl);
-      this.logger.debug('Metadata extraction completed.');
+      const { metaDescription, title } = await this.extractMetadata(dto.originalUrl);      this.logger.debug('Metadata extraction completed.');
 
       const link = await this.prisma.link.create({
         data: {
           originalUrl: dto.originalUrl,
-          title: dto.title ?? null,
+          title: title ?? dto.title ?? null,
           summary: null,
           keywords: dto.keywords ?? [],
           rawExtractedText: null,
@@ -94,7 +93,7 @@ export class LinksService {
 
   private async extractMetadata(
     originalUrl: string,
-  ): Promise<{ metaDescription: string | null }> {
+  ): Promise<{ metaDescription: string | null; title: string | null }> {
     try {
       const response = await fetch(originalUrl, {
         method: 'GET',
@@ -106,28 +105,33 @@ export class LinksService {
         },
         redirect: 'follow',
       });
+
       if (!response.ok) {
         this.logger.warn(`Content fetch failed with status ${response.status}.`);
-        return { metaDescription: null };
+        return { metaDescription: null, title: null };
       }
 
       const html = await response.text();
+
       const descriptionMatch = html.match(
         /<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["'][^>]*>/i,
       );
+      const description = descriptionMatch?.[1]?.trim() || null;
 
-      const description = descriptionMatch?.[1]?.trim();
+      const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+      const title = titleMatch?.[1]?.trim() || null;
+
       if (description) {
         this.logger.debug('Content fetch succeeded and meta description extracted.');
       }
 
-      return { metaDescription: description || null };
+      return { metaDescription: description, title };
     } catch (error) {
       this.logger.error(
         'Content extraction failed.',
         error instanceof Error ? error.stack : null,
       );
-      return { metaDescription: null };
+      return { metaDescription: null, title: null };
     }
   }
 

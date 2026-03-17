@@ -59,6 +59,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    if (!user.passwordHash) {
+  throw new UnauthorizedException('Please use Google to sign in');
+    }
+
     // Verify password
     const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
 
@@ -77,5 +81,30 @@ export class AuthService {
       message: 'Login successful',
     };
   }
+
+  async findOrCreateGoogleUser(email: string, displayName: string) {
+  // Check if user already exists
+  let user = await this.prisma.user.findUnique({
+    where: { email },
+  });
+
+  // If not, create them without a password
+  if (!user) {
+    user = await this.prisma.user.create({
+      data: {
+        email,
+        passwordHash: undefined,
+      },
+    });
+  }
+
+  // Issue JWT
+  const accessToken = this.jwtService.sign({
+    sub: user.id,
+    email: user.email,
+  });
+
+  return { accessToken, email: user.email };
+}
 }
 

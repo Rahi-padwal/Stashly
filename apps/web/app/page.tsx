@@ -22,6 +22,8 @@ export default function Home() {
   const [searchStatus, setSearchStatus] = useState<string | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [deletingLinkId, setDeletingLinkId] = useState<string | null>(null);
+  const [showDeletedPopup, setShowDeletedPopup] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [showingAllLinks, setShowingAllLinks] = useState(false);
@@ -39,6 +41,18 @@ export default function Home() {
       setUserEmail(storedUserEmail);
     }
   }, [router]);
+
+  useEffect(() => {
+    if (!showDeletedPopup) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setShowDeletedPopup(false);
+    }, 1800);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [showDeletedPopup]);
 
   const handleLogout = () => {
     localStorage.removeItem("userId");
@@ -81,6 +95,29 @@ export default function Home() {
       if (!response.ok) {
         const message = await response.text();
         throw new Error(message || "Failed to save link.");
+      }
+
+      const savedLink = (await response.json()) as SearchResult;
+
+      if (showingAllLinks) {
+        setResults((prev) => {
+          const alreadyPresent = prev.some((result) => result.id === savedLink.id);
+          if (alreadyPresent) {
+            return prev;
+          }
+
+          return [
+            {
+              id: savedLink.id,
+              originalUrl: savedLink.originalUrl,
+              title: savedLink.title || savedLink.originalUrl,
+              createdAt: savedLink.createdAt,
+            },
+            ...prev,
+          ];
+        });
+
+        setSearchStatus(null);
       }
 
       setSaveStatus("Link saved. Embedding is being generated.");
@@ -199,6 +236,51 @@ export default function Home() {
     setSearchQuery("");
   };
 
+  const handleDeleteLink = async (id: string) => {
+    if (!userId) {
+      setSearchStatus("Please log in first.");
+      return;
+    }
+
+    setDeletingLinkId(id);
+    setSearchStatus(null);
+
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        setSearchStatus("Please log in first.");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/links/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "Failed to delete link.");
+      }
+
+      setResults((prev) => {
+        const next = prev.filter((result) => result.id !== id);
+        if (next.length === 0) {
+          setSearchStatus(showingAllLinks ? "No links saved yet." : "No results found.");
+        }
+        return next;
+      });
+      setShowDeletedPopup(true);
+    } catch (error) {
+      setSearchStatus(
+        error instanceof Error ? error.message : "Failed to delete link.",
+      );
+    } finally {
+      setDeletingLinkId(null);
+    }
+  };
+
   // Don't render the page until we've checked authentication
   if (!userId) {
     return null;
@@ -206,6 +288,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
+      {showDeletedPopup && (
+        <div className="fixed right-6 top-6 z-50 rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-red-200">
+          deleted
+        </div>
+      )}
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-10 px-6 py-12">
         <header className="space-y-3">
           <div className="flex items-center justify-between">
@@ -296,18 +383,30 @@ export default function Home() {
                 key={result.id}
                 className="rounded-2xl border border-slate-100 bg-slate-50 p-4"
               >
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm font-semibold text-slate-900">
-                    {result.title || result.originalUrl}
-                  </p>
-                  <a
-                    href={result.originalUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-slate-600 underline decoration-slate-300 underline-offset-4"
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-semibold text-slate-900">
+                      {result.title || result.originalUrl}
+                    </p>
+                    <a
+                      href={result.originalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-slate-600 underline decoration-slate-300 underline-offset-4"
+                    >
+                      {result.originalUrl}
+                    </a>
+                  </div>
+                  <button
+                    type="button"
+                    title="delete"
+                    aria-label="delete"
+                    onClick={() => void handleDeleteLink(result.id)}
+                    disabled={deletingLinkId === result.id}
+                    className="h-7 w-7 rounded-full border border-red-300 text-lg leading-none text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {result.originalUrl}
-                  </a>
+                    -
+                  </button>
                 </div>
                 {showingAllLinks && result.createdAt && (
                   <p className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">

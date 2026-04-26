@@ -132,8 +132,8 @@ Dashboard UI with save link input (left) and semantic search interface (right), 
 git clone https://github.com/yourusername/Stashly.git
 cd Stashly
 =======
-git clone https://github.com/Rahi-padwal/linkRecall.git
-cd linkRecall
+git clone https://github.com/yourusername/Stashly.git
+cd Stashly
 >>>>>>> 5b413f236d3245f214f366f42003ff7ef5373b77
 ```
 

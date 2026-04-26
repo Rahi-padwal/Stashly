@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Stashly Recall",
+  "description": "Save links and search your recall from the browser toolbar.",
+  "version": "0.1.0",
+  "permissions": ["storage", "tabs", "identity"],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "https://localhost:3000/*"
+  ],
+  "action": {
+    "default_title": "Stashly Recall",
+    "default_popup": "popup.html"
+  }
+}

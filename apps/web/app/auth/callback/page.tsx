@@ -1,22 +1,21 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 function decodeJwt(token: string): { sub: string; email: string } | null {
   try {
     const parts = token.split(".");
     if (parts.length !== 3) return null;
-    const decoded = JSON.parse(
-      Buffer.from(parts[1], "base64").toString("utf-8")
-    );
+    const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = JSON.parse(atob(payload));
     return { sub: decoded.sub, email: decoded.email };
   } catch {
     return null;
   }
 }
 
-export default function CallbackPage() {
+function CallbackHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -44,5 +43,19 @@ export default function CallbackPage() {
     <div className="min-h-screen flex items-center justify-center">
       <p className="text-gray-600">Signing you in...</p>
     </div>
+  );
+}
+
+export default function CallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-gray-600">Signing you in...</p>
+        </div>
+      }
+    >
+      <CallbackHandler />
+    </Suspense>
   );
 }

@@ -438,6 +438,10 @@ export class LinksService {
       select: {
         id: true,
         originalUrl: true,
+        title: true,
+        summary: true,
+        keywords: true,
+        rawExtractedText: true,
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -445,12 +449,31 @@ export class LinksService {
     let processedCount = 0;
     let failedCount = 0;
 
+    this.logger.log(
+      `Starting reprocessing of ${links.length} links for userId: ${userId}`,
+    );
+
     for (const link of links) {
       try {
         const { metaDescription, title, contentText, extractedKeywords } =
           await this.extractMetadata(link.originalUrl);
 
-        const updated = await this.prisma.link.update({
+        // Build richer embedding content
+        const contentToEmbed = [
+          title,
+          metaDescription,
+          extractedKeywords?.join(' '),
+          contentText?.slice(0, 800),
+          link.originalUrl,
+        ]
+          .filter((part): part is string => Boolean(part && part.length > 0))
+          .join(' ');
+
+        const embedding = await this.embeddingService.generateEmbedding(
+          contentToEmbed,
+        );
+
+        await this.prisma.link.update({
           where: { id: link.id },
           data: {
             title,
@@ -458,26 +481,9 @@ export class LinksService {
             keywords: extractedKeywords,
             rawExtractedText: contentText,
           },
-          select: {
-            id: true,
-            originalUrl: true,
-            title: true,
-            summary: true,
-            keywords: true,
-            rawExtractedText: true,
-          },
         });
 
-        const input = this.buildEmbeddingInput({
-          title: updated.title,
-          summary: updated.summary,
-          keywords: updated.keywords,
-          rawExtractedText: updated.rawExtractedText,
-          originalUrl: updated.originalUrl,
-        });
-
-        const embedding = await this.embeddingService.generateEmbedding(input);
-
+        // Store embedding via raw query
         await this.prisma.$executeRaw(
           Prisma.sql`
             UPDATE "Link"
@@ -487,14 +493,20 @@ export class LinksService {
         );
 
         processedCount += 1;
+        this.logger.debug(
+          `Reprocessed link ${link.id} (${processedCount}/${links.length})`,
+        );
       } catch (error) {
         failedCount += 1;
         this.logger.error(
-          `Failed to reprocess ${link.originalUrl}`,
-          error instanceof Error ? error.stack : null,
+          `Failed to reprocess ${link.originalUrl}: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     }
+
+    this.logger.log(
+      `Reprocessing complete for userId: ${userId}. Processed: ${processedCount}, Failed: ${failedCount}`,
+    );
 
     return {
       total: links.length,

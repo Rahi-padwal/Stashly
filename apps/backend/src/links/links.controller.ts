@@ -59,4 +59,11 @@ export class LinksController {
     this.logger.debug(`Deleting all links for userId: ${userId}`);
     return this.linksService.deleteAllLinks(userId);
   }
+
+  @Post('admin/reprocess')
+  async reprocessAllLinks(@Request() req: any) {
+    const userId = req.user.userId;
+    this.logger.debug(`Reprocessing all links for userId: ${userId}`);
+    return this.linksService.reprocessAllLinks(userId);
+  }
 }

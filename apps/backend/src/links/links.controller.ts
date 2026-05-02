@@ -11,10 +11,12 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { LinksService } from './links.service';
 import { CreateLinkDto } from './dto/create-link.dto';
 import { SearchLinksDto } from './dto/search-links.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
 
 @Controller('links')
 @UseGuards(JwtAuthGuard)
@@ -37,6 +39,8 @@ export class LinksController {
   }
 
   @Get('search')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   search(@Query() query: SearchLinksDto, @Request() req: any) {
     const userId = req.user.userId;
     this.logger.debug(`Search query params: ${JSON.stringify(query)}`);
@@ -61,6 +65,7 @@ export class LinksController {
   }
 
   @Post('admin/reprocess')
+  @UseGuards(AdminGuard)
   async reprocessAllLinks(@Request() req: any) {
     const userId = req.user.userId;
     this.logger.debug(`Reprocessing all links for userId: ${userId}`);

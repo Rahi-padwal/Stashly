@@ -39,7 +39,7 @@ export class LinksService {
       }
 
       const { metaDescription, title, contentText, extractedKeywords } =
-        await this.extractMetadata(dto.originalUrl);
+        await this.scrapeUrl(dto.originalUrl);
       this.logger.debug('Metadata extraction completed.');
 
       const resolvedTitle = title ?? dto.title ?? null;
@@ -115,7 +115,7 @@ export class LinksService {
     }
   }
 
-  private async extractMetadata(
+  private async scrapeUrl(
     originalUrl: string,
   ): Promise<{
     metaDescription: string | null;
@@ -335,19 +335,75 @@ export class LinksService {
     return { success: true, deletedCount: deleted.count };
   }
 
+  async reprocessLink(linkId: string, userId: string) {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    if (!linkId) {
+      throw new Error('Link ID is required');
+    }
+
+    const link = await this.prisma.link.findFirst({
+      where: {
+        id: linkId,
+        userId,
+      },
+    });
+
+    if (!link) {
+      throw new NotFoundException('Link not found');
+    }
+
+    const { metaDescription, title, contentText, extractedKeywords } =
+      await this.scrapeUrl(link.originalUrl);
+
+    const combinedString = [
+      title,
+      metaDescription,
+      extractedKeywords.join(' '),
+      contentText?.slice(0, 800),
+      link.originalUrl,
+    ]
+      .filter((part): part is string => Boolean(part && part.length > 0))
+      .join(' ');
+
+    const embedding = await this.embeddingService.generateEmbedding(combinedString);
+
+    await this.prisma.link.update({
+      where: { id: link.id },
+      data: {
+        title,
+        summary: metaDescription,
+        keywords: extractedKeywords,
+        rawExtractedText: contentText,
+      },
+    });
+
+    await this.prisma.$executeRaw(
+      Prisma.sql`
+        UPDATE "Link"
+        SET "embedding" = ARRAY[${Prisma.join(embedding)}]::vector
+        WHERE "id" = ${link.id}
+      `,
+    );
+
+    return { success: true, linkId: link.id };
+  }
+
   async semanticSearch(query: string, userId: string) {
     const input = query.trim();
     if (!input) {
       return [] as LinkSearchResult[];
     }
 
-    const queryTokens = input.split(/\s+/).filter((token) => token.trim().length > 0);
-    const isShortQuery = queryTokens.length <= 2;
+    const wordCount = input.trim().split(/\s+/).length;
+    const isShortQuery = wordCount <= 2;
     const enrichedQuery = this.enrichQuery(input);
     const vectorWeight = 0.8;
     const keywordWeight = 0.2;
     const vectorSimilarityCutoff = isShortQuery ? 0.35 : 0.45;
-    const minimumScore = isShortQuery ? 0.3 : 0.4;
+    const minimumScore = isShortQuery ? 0.40 : 0.45;
     const strongVectorCutoff = isShortQuery ? 0.5 : 0.6;
 
     const embedding = await this.embeddingService.generateEmbedding(enrichedQuery);
@@ -355,7 +411,7 @@ export class LinksService {
       `Generated embedding with ${embedding.length} dimensions for query: "${input}" (enriched="${enrichedQuery}")`,
     );
 
-    const results = await this.prisma.$queryRaw<LinkSearchResult[]>(
+    const rawResults = await this.prisma.$queryRaw<LinkSearchResult[]>(
       Prisma.sql`
         WITH candidate_links AS (
           SELECT
@@ -379,7 +435,10 @@ export class LinksService {
                   coalesce("originalUrl", '')
                 )
               ),
-              websearch_to_tsquery('simple', ${input})
+              COALESCE(
+                NULLIF(websearch_to_tsquery('simple', ${input}), to_tsquery('')),
+                plainto_tsquery('simple', ${input})
+              )
             ) AS "keyword_rank"
           FROM "Link"
           WHERE "userId" = ${userId}
@@ -415,17 +474,14 @@ export class LinksService {
         LIMIT 10
       `,
     );
-    this.logger.debug(`Search returned ${results.length} results for userId: ${userId}`);
-    if (results.length > 0) {
-      this.logger.debug(`Top result: ${results[0].originalUrl}, score: ${results[0].score}`);
+    this.logger.debug(`Search returned ${rawResults.length} results for userId: ${userId}`);
+    if (rawResults.length > 0) {
+      this.logger.debug(`Top result: ${rawResults[0].originalUrl}, score: ${rawResults[0].score}`);
     }
 
-    return results.map((result) => ({
-      id: result.id,
-      originalUrl: result.originalUrl,
-      title: result.title ?? result.originalUrl,
-      score: result.score,
-    }));
+    const cliffFiltered = applyScoreCliff(rawResults, 0.07, 0.35);
+    const spreadFiltered = applyScoreSpread(cliffFiltered, 0.25);
+    return applyTopScoreRatio(spreadFiltered, 0.65);
   }
 
   async reprocessAllLinks(userId: string) {
@@ -438,10 +494,6 @@ export class LinksService {
       select: {
         id: true,
         originalUrl: true,
-        title: true,
-        summary: true,
-        keywords: true,
-        rawExtractedText: true,
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -453,44 +505,10 @@ export class LinksService {
       `Starting reprocessing of ${links.length} links for userId: ${userId}`,
     );
 
-    for (const link of links) {
+    for (let index = 0; index < links.length; index += 1) {
+      const link = links[index];
       try {
-        const { metaDescription, title, contentText, extractedKeywords } =
-          await this.extractMetadata(link.originalUrl);
-
-        // Build richer embedding content
-        const contentToEmbed = [
-          title,
-          metaDescription,
-          extractedKeywords?.join(' '),
-          contentText?.slice(0, 800),
-          link.originalUrl,
-        ]
-          .filter((part): part is string => Boolean(part && part.length > 0))
-          .join(' ');
-
-        const embedding = await this.embeddingService.generateEmbedding(
-          contentToEmbed,
-        );
-
-        await this.prisma.link.update({
-          where: { id: link.id },
-          data: {
-            title,
-            summary: metaDescription,
-            keywords: extractedKeywords,
-            rawExtractedText: contentText,
-          },
-        });
-
-        // Store embedding via raw query
-        await this.prisma.$executeRaw(
-          Prisma.sql`
-            UPDATE "Link"
-            SET "embedding" = ARRAY[${Prisma.join(embedding)}]::vector
-            WHERE "id" = ${link.id}
-          `,
-        );
+        await this.reprocessLink(link.id, userId);
 
         processedCount += 1;
         this.logger.debug(
@@ -501,6 +519,10 @@ export class LinksService {
         this.logger.error(
           `Failed to reprocess ${link.originalUrl}: ${error instanceof Error ? error.message : String(error)}`,
         );
+      }
+
+      if (index < links.length - 1) {
+        await this.delay(500);
       }
     }
 
@@ -514,6 +536,57 @@ export class LinksService {
       failedCount,
     };
   }
+
+  private delay(ms: number) {
+    return new Promise<void>((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  }
+}
+
+function applyScoreCliff(
+  results: LinkSearchResult[],
+  minDrop = 0.07,
+  relativeFactor = 0.35,
+): LinkSearchResult[] {
+  if (results.length <= 1) {
+    return results;
+  }
+
+  const topScore = results[0].score;
+
+  for (let index = 1; index < results.length; index += 1) {
+    const drop = results[index - 1].score - results[index].score;
+    const relativeDropThreshold = topScore * relativeFactor;
+
+    if (drop >= minDrop && drop >= relativeDropThreshold) {
+      return results.slice(0, index);
+    }
+  }
+
+  return results;
+}
+
+function applyScoreSpread(
+  results: LinkSearchResult[],
+  maxSpread = 0.15,
+): LinkSearchResult[] {
+  if (results.length <= 1) return results;
+  const topScore = results[0].score;
+  const floor = topScore - maxSpread;
+  const filtered = results.filter(r => r.score >= floor);
+  return filtered.length > 0 ? filtered : results.slice(0, 1);
+}
+
+function applyTopScoreRatio(
+  results: LinkSearchResult[],
+  ratio = 0.72,
+): LinkSearchResult[] {
+  if (results.length <= 1) return results;
+  const topScore = results[0].score;
+  const floor = topScore * ratio;
+  const filtered = results.filter(r => r.score >= floor);
+  return filtered.length > 0 ? filtered : results.slice(0, 1);
 }
 
 type LinkSearchResult = Pick<

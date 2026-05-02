@@ -1,4 +1,5 @@
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = "https://stashly-api-66mp.onrender.com";
+
 
 const state = {
   token: null,
@@ -7,6 +8,7 @@ const state = {
   isLoginMode: true,
   showingAll: false,
   deletingId: null,
+  theme: "light",
 };
 
 const authSection = document.getElementById("authSection");
@@ -16,15 +18,16 @@ const authForm = document.getElementById("authForm");
 const authSubmitBtn = document.getElementById("authSubmitBtn");
 const googleAuthBtn = document.getElementById("googleAuthBtn");
 const toggleAuthBtn = document.getElementById("toggleAuthBtn");
+const themeToggleBtn = document.getElementById("themeToggleBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const emailInput = document.getElementById("emailInput");
 const passwordInput = document.getElementById("passwordInput");
 
 const saveInput = document.getElementById("saveInput");
 const saveBtn = document.getElementById("saveBtn");
-const saveTabBtn = document.getElementById("saveTabBtn");
 const saveStatus = document.getElementById("saveStatus");
 
+const searchForm = document.getElementById("searchForm");
 const searchInput = document.getElementById("searchInput");
 const searchBtn = document.getElementById("searchBtn");
 const viewAllBtn = document.getElementById("viewAllBtn");
@@ -99,6 +102,17 @@ function clearStorage(keys) {
   return new Promise((resolve) => {
     chrome.storage.local.remove(keys, resolve);
   });
+}
+
+async function setTheme(theme) {
+  state.theme = theme === "dark" ? "dark" : "light";
+  document.documentElement.dataset.theme = state.theme;
+  themeToggleBtn.textContent = state.theme === "dark" ? "Bright mode" : "Dark mode";
+  await setStorage({ theme: state.theme });
+}
+
+function toggleTheme() {
+  void setTheme(state.theme === "dark" ? "light" : "dark");
 }
 
 function renderAuthMode() {
@@ -242,20 +256,6 @@ async function saveLink(url) {
     setSaveStatus(error instanceof Error ? error.message : "Failed to save link.");
   } finally {
     setLoading(saveBtn, false, "Save", "Saving...");
-  }
-}
-
-async function saveCurrentTab() {
-  try {
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    const activeTab = tabs[0];
-    if (!activeTab || !activeTab.url) {
-      setSaveStatus("No active tab URL found.");
-      return;
-    }
-    await saveLink(activeTab.url);
-  } catch {
-    setSaveStatus("Failed to read current tab.");
   }
 }
 
@@ -425,16 +425,15 @@ function bindEvents() {
     state.isLoginMode = !state.isLoginMode;
     renderAuthMode();
   });
+  themeToggleBtn.addEventListener("click", toggleTheme);
 
   logoutBtn.addEventListener("click", logout);
   saveBtn.addEventListener("click", () => {
     saveLink();
   });
-  saveTabBtn.addEventListener("click", () => {
-    saveCurrentTab();
-  });
 
-  searchBtn.addEventListener("click", () => {
+  searchForm.addEventListener("submit", (event) => {
+    event.preventDefault();
     runSearch();
   });
 
@@ -449,9 +448,11 @@ function bindEvents() {
 
 async function init() {
   bindEvents();
+  const saved = await getStorage(["accessToken", "userId", "userEmail", "theme"]);
+
+  await setTheme(saved && saved.theme === "dark" ? "dark" : "light");
   renderScreen();
 
-  const saved = await getStorage(["accessToken", "userId", "userEmail"]);
   if (saved && saved.accessToken) {
     state.token = saved.accessToken;
     state.userId = saved.userId || null;

@@ -9,4 +9,10 @@ export class AppController {
   getHealth() {
     return this.appService.getHealth();
   }
+
+  @Get('debug/render-ip')
+  async getRenderIp() {
+    const response = await fetch('https://ipinfo.io/json');
+    return response.json();
+  }
 }

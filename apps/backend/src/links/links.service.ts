@@ -435,10 +435,7 @@ export class LinksService {
                   coalesce("originalUrl", '')
                 )
               ),
-              COALESCE(
-                NULLIF(websearch_to_tsquery('simple', ${input}), to_tsquery('')),
-                plainto_tsquery('simple', ${input})
-              )
+              plainto_tsquery('simple', ${input})
             ) AS "keyword_rank"
           FROM "Link"
           WHERE "userId" = ${userId}

@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "permissions": ["storage", "tabs", "identity"],
   "host_permissions": [
-    "https://stashly-api-66mp.onrender.com/*"
+    "https://stashly-backend-us.onrender.com/*"
   ],
   "icons": {
     "16": "icons/icon-16.png",

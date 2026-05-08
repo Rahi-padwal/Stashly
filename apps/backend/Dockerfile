@@ -10,8 +10,8 @@ RUN npm ci
 
 COPY . .
 
-RUN npm run build -w stashly-backend
 RUN npm run prisma:generate -w stashly-backend
+RUN npm run build -w stashly-backend
 
 FROM node:20-alpine AS runner
 

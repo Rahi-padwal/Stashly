@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://stashly-api-66mp.onrender.com";
+const API_BASE_URL = "https://stashly-backend-us.onrender.com";
 
 
 const state = {

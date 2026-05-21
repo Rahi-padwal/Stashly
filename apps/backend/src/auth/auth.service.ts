@@ -13,40 +13,32 @@ export class AuthService {
   ) {}
 
   async signup(dto: SignupDto) {
-    // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
 
-    if (existingUser) {
-      throw new ConflictException('User with this email already exists');
-    }
-
-    // Hash password
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    // Create user
+    if (existingUser) {
+      if (existingUser.passwordHash) {
+        throw new ConflictException('User with this email already exists');
+      }
+      // Google-only account — link the password
+      const user = await this.prisma.user.update({
+        where: { email: dto.email },
+        data: { passwordHash: hashedPassword },
+      });
+      const accessToken = this.jwtService.sign({ sub: user.id, email: user.email });
+      return { accessToken, message: 'Password set. You can now sign in with email and password.' };
+    }
+
     const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        passwordHash: hashedPassword,
-      },
-      select: {
-        id: true,
-        email: true,
-        createdAt: true,
-      },
+      data: { email: dto.email, passwordHash: hashedPassword },
+      select: { id: true, email: true, createdAt: true },
     });
 
-    // Generate JWT token
-    const accessToken = this.jwtService.sign(
-  { sub: user.id, email: user.email },
-);
-
-    return {
-      accessToken,
-      message: 'User created successfully',
-    };
+    const accessToken = this.jwtService.sign({ sub: user.id, email: user.email });
+    return { accessToken, message: 'User created successfully' };
   }
 
   async login(dto: LoginDto) {
@@ -60,7 +52,7 @@ export class AuthService {
     }
 
     if (!user.passwordHash) {
-  throw new UnauthorizedException('Please use Google to sign in');
+      throw new UnauthorizedException('No password set for this account. Use "Sign up" to set one, or continue with Google.');
     }
 
     // Verify password

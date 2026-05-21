@@ -38,6 +38,22 @@ export class LinksService {
         throw new Error('User not found');
       }
 
+      // Check if a link with the same URL already exists for this user
+      const existingLink = await this.prisma.link.findFirst({
+        where: {
+          originalUrl: dto.originalUrl,
+          userId: dto.userId,
+        },
+      });
+
+      if (existingLink) {
+        this.logger.debug(`Link already exists for user ${dto.userId}, touching updatedAt.`);
+        return this.prisma.link.update({
+          where: { id: existingLink.id },
+          data: { updatedAt: new Date() },
+        });
+      }
+
       const { metaDescription, title, contentText, extractedKeywords } =
         await this.scrapeUrl(dto.originalUrl);
       this.logger.debug('Metadata extraction completed.');

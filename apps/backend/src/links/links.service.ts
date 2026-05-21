@@ -300,7 +300,7 @@ export class LinksService {
     return best.slice(0, 12000);
   }
 
-  async getAllLinks(userId: string) {
+  async getAllLinks(userId: string, sortBy?: string) {
     if (!userId) {
       throw new Error('User ID is required');
     }
@@ -313,7 +313,7 @@ export class LinksService {
         title: true,
         createdAt: true,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: sortBy === 'oldest' ? 'asc' : 'desc' },
     });
 
     this.logger.debug(`Retrieved ${links.length} links for userId: ${userId}`);

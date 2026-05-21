@@ -38,6 +38,7 @@ const startDateInput = document.getElementById("startDateInput");
 const endDateInput = document.getElementById("endDateInput");
 const viewAllBtn = document.getElementById("viewAllBtn");
 const backBtn = document.getElementById("backBtn");
+const sortSelect = document.getElementById("sortSelect");
 const searchStatus = document.getElementById("searchStatus");
 const results = document.getElementById("results");
 
@@ -137,6 +138,7 @@ function renderScreen() {
 
   viewAllBtn.classList.toggle("hidden", state.showingAll);
   backBtn.classList.toggle("hidden", !state.showingAll);
+  sortSelect.classList.toggle("hidden", !state.showingAll);
   renderAuthMode();
 }
 
@@ -328,7 +330,7 @@ async function viewAll() {
   setSearchStatus("");
 
   try {
-    const data = await api("/links");
+    const data = await api(`/links?sortBy=${sortSelect.value}`);
     currentResults = Array.isArray(data) ? data : [];
     renderResults(currentResults);
     if (currentResults.length === 0) {
@@ -485,6 +487,10 @@ function bindEvents() {
   });
 
   viewAllBtn.addEventListener("click", () => {
+    viewAll();
+  });
+
+  sortSelect.addEventListener("change", () => {
     viewAll();
   });
 

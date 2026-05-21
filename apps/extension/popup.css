@@ -281,6 +281,17 @@ button:disabled {
   filter: brightness(0.97);
 }
 
+.sort-select {
+  border: 1px solid var(--input-border);
+  background: var(--surface-alt);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-size: inherit;
+  margin-left: auto;
+}
+
 .full-width-mt {
   width: 100%;
   margin-top: 6px;

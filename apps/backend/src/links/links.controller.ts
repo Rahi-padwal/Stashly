@@ -32,10 +32,10 @@ export class LinksController {
   }
 
   @Get()
-  getAllLinks(@Request() req: any) {
+  getAllLinks(@Query('sortBy') sortBy: string, @Request() req: any) {
     const userId = req.user.userId;
     this.logger.debug(`Fetching all links for userId: ${userId}`);
-    return this.linksService.getAllLinks(userId);
+    return this.linksService.getAllLinks(userId, sortBy);
   }
 
   @Get('search')

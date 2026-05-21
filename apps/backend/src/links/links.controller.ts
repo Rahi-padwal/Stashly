@@ -38,6 +38,12 @@ export class LinksController {
     return this.linksService.getAllLinks(userId, sortBy);
   }
 
+  @Get('count')
+  getLinkCount(@Request() req: any) {
+    const userId = req.user.userId;
+    return this.linksService.getLinkCount(userId);
+  }
+
   @Get('search')
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 20, ttl: 60000 } })

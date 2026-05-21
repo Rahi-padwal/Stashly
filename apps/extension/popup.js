@@ -24,6 +24,8 @@ const emailInput = document.getElementById("emailInput");
 const passwordInput = document.getElementById("passwordInput");
 const authError = document.getElementById("authError");
 
+const linkCount = document.getElementById("linkCount");
+
 const saveInput = document.getElementById("saveInput");
 const saveBtn = document.getElementById("saveBtn");
 const saveCurrentTabBtn = document.getElementById("saveCurrentTabBtn");
@@ -324,6 +326,16 @@ async function runSearch() {
   }
 }
 
+async function loadLinkCount() {
+  try {
+    const data = await api("/links/count");
+    linkCount.textContent = `You have ${data.count} saved link${data.count === 1 ? "" : "s"}`;
+    linkCount.classList.remove("hidden");
+  } catch {
+    // show nothing on failure
+  }
+}
+
 async function viewAll() {
   state.showingAll = true;
   renderScreen();
@@ -511,6 +523,7 @@ async function init() {
     state.userId = saved.userId || null;
     state.userEmail = saved.userEmail || null;
     renderScreen();
+    loadLinkCount();
   }
 }
 

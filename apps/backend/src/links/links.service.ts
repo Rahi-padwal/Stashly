@@ -300,6 +300,14 @@ export class LinksService {
     return best.slice(0, 12000);
   }
 
+  async getLinkCount(userId: string) {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    const count = await this.prisma.link.count({ where: { userId } });
+    return { count };
+  }
+
   async getAllLinks(userId: string, sortBy?: string) {
     if (!userId) {
       throw new Error('User ID is required');

@@ -54,6 +54,19 @@
               <button id="searchBtn" class="ghost" type="submit">Search</button>
             </div>
           </form>
+          <button id="dateFilterToggle" class="linklike" type="button">Filter by date</button>
+          <div id="dateFilterInputs" class="hidden date-filter">
+            <div class="row">
+              <div class="date-filter-field">
+                <label for="startDateInput">From</label>
+                <input id="startDateInput" type="date" />
+              </div>
+              <div class="date-filter-field">
+                <label for="endDateInput">To</label>
+                <input id="endDateInput" type="date" />
+              </div>
+            </div>
+          </div>
           <div class="row actions-row">
             <button id="viewAllBtn" class="ghost" type="button">View All</button>
             <button id="backBtn" class="ghost hidden" type="button">Main</button>

@@ -22,6 +22,7 @@ const themeToggleBtn = document.getElementById("themeToggleBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const emailInput = document.getElementById("emailInput");
 const passwordInput = document.getElementById("passwordInput");
+const authError = document.getElementById("authError");
 
 const saveInput = document.getElementById("saveInput");
 const saveBtn = document.getElementById("saveBtn");
@@ -30,6 +31,10 @@ const saveStatus = document.getElementById("saveStatus");
 const searchForm = document.getElementById("searchForm");
 const searchInput = document.getElementById("searchInput");
 const searchBtn = document.getElementById("searchBtn");
+const dateFilterToggle = document.getElementById("dateFilterToggle");
+const dateFilterInputs = document.getElementById("dateFilterInputs");
+const startDateInput = document.getElementById("startDateInput");
+const endDateInput = document.getElementById("endDateInput");
 const viewAllBtn = document.getElementById("viewAllBtn");
 const backBtn = document.getElementById("backBtn");
 const searchStatus = document.getElementById("searchStatus");
@@ -272,7 +277,10 @@ async function runSearch() {
   renderScreen();
 
   try {
-    const data = await api(`/links/search?q=${encodeURIComponent(q)}`);
+    const params = new URLSearchParams({ q });
+    if (startDateInput.value) params.set("startDate", startDateInput.value);
+    if (endDateInput.value) params.set("endDate", endDateInput.value);
+    const data = await api(`/links/search?${params.toString()}`);
     currentResults = Array.isArray(data) ? data : [];
     renderResults(currentResults);
     if (currentResults.length === 0) {
@@ -365,7 +373,7 @@ async function loginOrRegister(event) {
     setSaveStatus("");
     setSearchStatus("");
   } catch (error) {
-    setSearchStatus(error instanceof Error ? error.message : "Authentication failed.");
+    authError.textContent = error instanceof Error ? error.message : "Authentication failed.";
   } finally {
     setLoading(authSubmitBtn, false, state.isLoginMode ? "Sign In" : "Sign Up", "Please wait...");
   }
@@ -423,6 +431,7 @@ function bindEvents() {
   googleAuthBtn.addEventListener("click", continueWithGoogle);
   toggleAuthBtn.addEventListener("click", () => {
     state.isLoginMode = !state.isLoginMode;
+    authError.textContent = "";
     renderAuthMode();
   });
   themeToggleBtn.addEventListener("click", toggleTheme);
@@ -435,6 +444,11 @@ function bindEvents() {
   searchForm.addEventListener("submit", (event) => {
     event.preventDefault();
     runSearch();
+  });
+
+  dateFilterToggle.addEventListener("click", () => {
+    const nowHidden = dateFilterInputs.classList.toggle("hidden");
+    dateFilterToggle.textContent = nowHidden ? "Filter by date" : "Hide date filter";
   });
 
   viewAllBtn.addEventListener("click", () => {

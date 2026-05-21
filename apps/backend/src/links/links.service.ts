@@ -407,7 +407,7 @@ export class LinksService {
     return { success: true, linkId: link.id };
   }
 
-  async semanticSearch(query: string, userId: string) {
+  async semanticSearch(query: string, userId: string, startDate?: string, endDate?: string) {
     const input = query.trim();
     if (!input) {
       return [] as LinkSearchResult[];
@@ -421,6 +421,14 @@ export class LinksService {
     const vectorSimilarityCutoff = isShortQuery ? 0.35 : 0.45;
     const minimumScore = isShortQuery ? 0.40 : 0.45;
     const strongVectorCutoff = isShortQuery ? 0.5 : 0.6;
+
+    let dateFilter = Prisma.sql``;
+    if (startDate) {
+      dateFilter = Prisma.sql`${dateFilter} AND "createdAt" >= ${new Date(startDate)}`;
+    }
+    if (endDate) {
+      dateFilter = Prisma.sql`${dateFilter} AND "createdAt" <= ${new Date(endDate)}`;
+    }
 
     const embedding = await this.embeddingService.generateEmbedding(enrichedQuery);
     this.logger.debug(
@@ -454,7 +462,7 @@ export class LinksService {
               plainto_tsquery('simple', ${input})
             ) AS "keyword_rank"
           FROM "Link"
-          WHERE "userId" = ${userId}
+          WHERE "userId" = ${userId} ${dateFilter}
         ),
         scored_links AS (
           SELECT

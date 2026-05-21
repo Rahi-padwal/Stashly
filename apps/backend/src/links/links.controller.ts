@@ -44,7 +44,7 @@ export class LinksController {
   search(@Query() query: SearchLinksDto, @Request() req: any) {
     const userId = req.user.userId;
     this.logger.debug(`Search query params: ${JSON.stringify(query)}`);
-    return this.linksService.semanticSearch(query.q, userId);
+    return this.linksService.semanticSearch(query.q, userId, query.startDate, query.endDate);
   }
 
   @Delete(':id')

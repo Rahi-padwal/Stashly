@@ -281,6 +281,14 @@ button:disabled {
   filter: brightness(0.97);
 }
 
+.date-filter {
+  margin-top: 6px;
+}
+
+.date-filter-field {
+  flex: 1;
+}
+
 .toast {
   position: fixed;
   top: 10px;

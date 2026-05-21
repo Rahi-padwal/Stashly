@@ -1,9 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Stashly",
-  "description": "Save links and search your recall from the browser toolbar.",
+  "description": "One click to save. One search to find. Instead of scrolling through bookmarks, just type what you remember and Stashly finds it.",
   "version": "0.1.1",
-  "permissions": ["storage", "tabs", "identity"],
+  "permissions": ["storage", "tabs", "identity", "contextMenus", "notifications"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "host_permissions": [
     "https://stashly-backend-us.onrender.com/*"
   ],

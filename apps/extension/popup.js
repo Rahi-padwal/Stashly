@@ -26,6 +26,7 @@ const authError = document.getElementById("authError");
 
 const saveInput = document.getElementById("saveInput");
 const saveBtn = document.getElementById("saveBtn");
+const saveCurrentTabBtn = document.getElementById("saveCurrentTabBtn");
 const saveStatus = document.getElementById("saveStatus");
 
 const searchForm = document.getElementById("searchForm");
@@ -264,6 +265,34 @@ async function saveLink(url) {
   }
 }
 
+async function saveCurrentTab() {
+  setLoading(saveCurrentTabBtn, true, "Save Current Tab", "Saving...");
+  setSaveStatus("");
+
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab.url) {
+      setSaveStatus("Could not get current tab URL.");
+      return;
+    }
+
+    const saved = await api("/links", "POST", { originalUrl: tab.url });
+    setSaveStatus("Link saved. Embedding is being generated.");
+
+    if (state.showingAll && saved && saved.id) {
+      const exists = currentResults.some((item) => item.id === saved.id);
+      if (!exists) {
+        currentResults = [saved, ...currentResults];
+        renderResults(currentResults);
+      }
+    }
+  } catch (error) {
+    setSaveStatus(error instanceof Error ? error.message : "Failed to save link.");
+  } finally {
+    setLoading(saveCurrentTabBtn, false, "Save Current Tab", "Saving...");
+  }
+}
+
 async function runSearch() {
   const q = searchInput.value.trim();
   if (!q) {
@@ -439,6 +468,10 @@ function bindEvents() {
   logoutBtn.addEventListener("click", logout);
   saveBtn.addEventListener("click", () => {
     saveLink();
+  });
+
+  saveCurrentTabBtn.addEventListener("click", () => {
+    saveCurrentTab();
   });
 
   searchForm.addEventListener("submit", (event) => {

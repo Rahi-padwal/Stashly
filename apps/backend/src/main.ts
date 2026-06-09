@@ -7,11 +7,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigService);
-  const frontendOrigin = configService.get<string>('FRONTEND_ORIGIN') ?? 'http://localhost:3001';
+  const rawOrigins = configService.get<string>('FRONTEND_ORIGIN') ?? 'http://localhost:3001';
+  const allowedOrigins = rawOrigins.split(',').map((o) => o.trim());
 
-  // Enable CORS for frontend
   app.enableCors({
-    origin: frontendOrigin,
+    origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
     credentials: true,
   });
 

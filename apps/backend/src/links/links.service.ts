@@ -47,11 +47,8 @@ export class LinksService {
       });
 
       if (existingLink) {
-        this.logger.debug(`Link already exists for user ${dto.userId}, touching updatedAt.`);
-        return this.prisma.link.update({
-          where: { id: existingLink.id },
-          data: { updatedAt: new Date() },
-        });
+        this.logger.debug(`Link already exists for user ${dto.userId}, returning existing.`);
+        return existingLink;
       }
 
       const { metaDescription, title, contentText, extractedKeywords } =
@@ -306,6 +303,59 @@ export class LinksService {
     }
     const count = await this.prisma.link.count({ where: { userId } });
     return { count };
+  }
+
+  async getStats(userId: string) {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    const links = await this.prisma.link.findMany({
+      where: { userId },
+      select: { originalUrl: true, keywords: true, createdAt: true },
+    });
+
+    const totalLinks = links.length;
+
+    const domainCounts: Record<string, number> = {};
+    for (const link of links) {
+      try {
+        const hostname = new URL(link.originalUrl).hostname.replace(/^www\./, '');
+        domainCounts[hostname] = (domainCounts[hostname] ?? 0) + 1;
+      } catch {
+        // skip unparseable URLs
+      }
+    }
+    const topDomains = Object.entries(domainCounts)
+      .map(([domain, count]) => ({ domain, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
+
+    const keywordCounts: Record<string, number> = {};
+    for (const link of links) {
+      for (const kw of link.keywords) {
+        const k = kw.toLowerCase().trim();
+        if (k.length > 1) {
+          keywordCounts[k] = (keywordCounts[k] ?? 0) + 1;
+        }
+      }
+    }
+    const topKeywords = Object.entries(keywordCounts)
+      .map(([keyword, count]) => ({ keyword, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    const monthCounts: Record<string, number> = {};
+    for (const link of links) {
+      const month = link.createdAt.toISOString().slice(0, 7);
+      monthCounts[month] = (monthCounts[month] ?? 0) + 1;
+    }
+    const linksPerMonth = Object.entries(monthCounts)
+      .map(([month, count]) => ({ month, count }))
+      .sort((a, b) => a.month.localeCompare(b.month))
+      .slice(-6);
+
+    return { totalLinks, topDomains, topKeywords, linksPerMonth };
   }
 
   async getAllLinks(userId: string, sortBy?: string) {

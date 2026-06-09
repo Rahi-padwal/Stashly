@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { AppConfigModule } from './config/config.module';
 import { LinksModule } from './links/links.module';
+import { CollectionsModule } from './collections/collections.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { LinksModule } from './links/links.module';
     CommonModule,
     AuthModule,
     LinksModule,
+    CollectionsModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 20 }]),
   ],
   controllers: [AppController],

@@ -15,10 +15,11 @@
     "format": "npm run format -w stashly-backend && npm run format -w web",
     "lint": "npm run lint -w stashly-backend && npm run lint -w web",
     "start:backend": "npm run start:dev -w stashly-backend",
-    "start:frontend": "npm run dev -w web -- --port 3001",
+    "start:frontend": "npm run dev -w web -- --port 3001 --webpack",
     "prisma:migrate:dev": "npm run prisma:migrate:dev -w stashly-backend",
     "prisma:migrate:deploy": "npm run prisma:migrate:deploy -w stashly-backend",
     "prisma:generate": "npm run prisma:generate -w stashly-backend",
+    "prisma:db:push": "npm run prisma:db:push -w stashly-backend",
     "test": "npm run test -w stashly-backend",
     "test:e2e": "npm run test:e2e -w stashly-backend"
   },

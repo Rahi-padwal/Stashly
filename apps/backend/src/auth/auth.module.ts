@@ -24,7 +24,7 @@ import { GoogleAuthGuard } from './guards/google-auth.guard';
         }
         return {
           secret,
-          signOptions: { expiresIn: '15m' },
+          signOptions: { expiresIn: '30d' },
         };
       },
     }),

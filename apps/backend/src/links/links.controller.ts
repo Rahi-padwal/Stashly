@@ -44,6 +44,12 @@ export class LinksController {
     return this.linksService.getLinkCount(userId);
   }
 
+  @Get('stats')
+  getStats(@Request() req: any) {
+    const userId = req.user.userId;
+    return this.linksService.getStats(userId);
+  }
+
   @Get('search')
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 20, ttl: 60000 } })

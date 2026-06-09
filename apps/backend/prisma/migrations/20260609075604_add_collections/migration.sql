@@ -1,6 +1,3 @@
--- AlterTable
-ALTER TABLE "Link" ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
-
 -- CreateTable
 CREATE TABLE "Collection" (
     "id" TEXT NOT NULL,
